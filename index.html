@@ -3,15 +3,46 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tìm đáp án thi CNTT</title>
+  <title>Tìm nhanh Q&A — Demo</title>
 
-  <!-- Fuse.js -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,arial;margin:24px;background:#f7f8fb}
     .container{max-width:900px;margin:0 auto;background:white;padding:20px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-    input[type=text]{width:100%;padding:12px 14px;font-size:16px;border-radius:8px;border:1px solid #ddd}
+
+    /* Khung chứa input và nút X */
+    .search-wrap{
+      position: relative;
+      width: 100%;
+    }
+
+    #search{
+      width: 100%;
+      padding: 12px 40px 12px 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+
+    /* Nút X xoá */
+    .clear-btn{
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: #aaa;
+      cursor: pointer;
+      user-select: none;
+      display: none; /* Ẩn khi input rỗng */
+    }
+
+    .clear-btn:hover{
+      color: #555;
+    }
+
     .result{padding:12px;border-bottom:1px solid #eee}
     .q{font-weight:600}
     .a{margin-top:6px;color:#333}
@@ -20,10 +51,14 @@
 </head>
 <body>
   <div class="container">
-    <h1>Tìm nhanh đáp án thi CNTT</h1>
-    <p>Gõ từ khóa để tìm câu hỏi–đáp án (Hải Đăng Khoa Binh chủng).</p>
+    <h1>Tìm nhanh Q&A</h1>
+    <p>Gõ từ khóa để tìm câu hỏi–đáp án (Fuse.js fuzzy search).</p>
 
-    <input id="search" type="text" placeholder="Nhập từ khóa..." autofocus />
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Nhập từ khóa..." autofocus />
+      <div id="clearBtn" class="clear-btn">×</div>
+    </div>
+
     <div id="count" class="meta" style="margin-top:8px">0 kết quả</div>
     <div id="results" style="margin-top:12px"></div>
   </div>
@@ -31,7 +66,6 @@
 <script>
 let data = [];
 
-// 🔥 Cấu hình Fuse.js — phiên bản đúng
 const options = {
   includeScore: false,
   keys: [
@@ -44,7 +78,6 @@ const options = {
 
 const fuse = new Fuse([], options);
 
-// Tải data.json
 fetch('data.json')
   .then(res => res.json())
   .then(json => {
@@ -54,6 +87,7 @@ fetch('data.json')
   });
 
 const input = document.getElementById('search');
+const clearBtn = document.getElementById('clearBtn');
 const resultsEl = document.getElementById('results');
 const countEl = document.getElementById('count');
 
@@ -88,6 +122,10 @@ function escapeHtml(s){
 
 input.addEventListener('input', ()=>{
   const v = input.value.trim();
+
+  // Hiện/ẩn nút X
+  clearBtn.style.display = v.length > 0 ? 'block' : 'none';
+
   if(v.length < 1){
     renderResults(data.slice(0, 10));
     return;
@@ -97,8 +135,15 @@ input.addEventListener('input', ()=>{
   const items = res.map(r => r.item);
   renderResults(items);
 });
+
+// Khi bấm nút X → Xóa nội dung + load lại top 10 câu
+clearBtn.addEventListener('click', ()=>{
+  input.value = '';
+  clearBtn.style.display = 'none';
+  input.focus();
+  renderResults(data.slice(0, 10));
+});
 </script>
 
 </body>
 </html>
-
