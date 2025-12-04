@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tìm nhanh Q&A — Demo</title>
+  <!-- Fuse.js (fuzzy search) từ CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,arial;margin:24px;background:#f7f8fb}
+    .container{max-width:900px;margin:0 auto;background:white;padding:20px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    input[type=text]{width:100%;padding:12px 14px;font-size:16px;border-radius:8px;border:1px solid #ddd}
+    .result{padding:12px;border-bottom:1px solid #eee}
+    .q{font-weight:600}
+    .a{margin-top:6px;color:#333}
+    .meta{font-size:12px;color:#777}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tìm nhanh Q&A</h1>
+    <p>Gõ một vài ký tự từ câu hỏi để tìm ra câu trả lời (demo dùng Fuse.js — fuzzy search).</p>
+    <input id="search" type="text" placeholder="Nhập từ khóa (ví dụ: 'đăng nhập', 'firebase')" autofocus />
+    <div id="count" class="meta" style="margin-top:8px">0 kết quả</div>
+    <div id="results" style="margin-top:12px"></div>
+  </div>
+
+<script>
+// Tải dữ liệu Q&A từ file data.json
+let data = [];
+fetch('data.json')
+  .then(res => res.json())
+  .then(json => {
+    data = json;
+    fuse.setCollection(data);
+    renderResults(data.slice(0,10));
+  });
+
+// Cấu hình Fuse.js = {
+  includeScore: true,
+  keys: [
+    { name: 'q', weight: 0.8 },
+    { name: 'a', weight: 0.2 }
+  ],
+  threshold: 0.4, // càng thấp càng chính xác, càng cao càng rộng (0.0 - 1.0)
+  minMatchCharLength: 2
+};
+const fuse = new Fuse([], options);
+
+const input = document.getElementById('search');
+const resultsEl = document.getElementById('results');
+const countEl = document.getElementById('count');
+
+function renderResults(list){
+  resultsEl.innerHTML = '';
+  if(!list.length){ countEl.textContent = '0 kết quả'; return; }
+  countEl.textContent = list.length + ' kết quả';
+  for(const item of list){
+    const div = document.createElement('div');
+    div.className = 'result';
+    div.innerHTML = `<div class="q">Q: ${escapeHtml(item.q)}</div><div class="a">A: ${escapeHtml(item.a)}</div>`;
+    resultsEl.appendChild(div);
+  }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
+
+input.addEventListener('input', ()=>{
+  const v = input.value.trim();
+  if(v.length < 1){ renderResults(data.slice(0,10)); return; }
+  // Tìm fuzzy
+  const res = fuse.search(v);
+  // fuse trả về {item,score} — lấy item
+  const items = res.map(r => r.item);
+  renderResults(items);
+});
+
+// Hiển thị một vài kết quả ban đầu
+renderResults(data.slice(0,10));
+</script>
+</body>
+</html>
